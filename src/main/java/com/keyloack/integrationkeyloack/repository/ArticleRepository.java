@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface ArticleRepository extends JpaRepository<Article,Long> {
     List<Article> findByAuthor(User author);
+    List<Article> findByApprovedFalse();
 }

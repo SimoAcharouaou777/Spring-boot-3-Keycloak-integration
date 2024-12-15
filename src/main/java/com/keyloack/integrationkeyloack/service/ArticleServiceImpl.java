@@ -30,5 +30,17 @@ public class ArticleServiceImpl implements ArticleService {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return articleRepository.findByAuthor(user);
     }
+
+    @Override
+    public List<Article> getUnapprovedArtiles() {
+        return articleRepository.findByApprovedFalse();
+    }
+
+    @Override
+    public Article approveArticle(Long articleId) {
+        Article article = articleRepository.findById(articleId).orElseThrow(() -> new RuntimeException("Article not found"));
+        article.setApproved(true);
+        return articleRepository.save(article);
+    }
 }
 

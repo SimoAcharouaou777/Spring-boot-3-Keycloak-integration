@@ -4,11 +4,16 @@ import com.keyloack.integrationkeyloack.entity.Role;
 import com.keyloack.integrationkeyloack.entity.User;
 import com.keyloack.integrationkeyloack.repository.RoleRepository;
 import com.keyloack.integrationkeyloack.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceImpl implements UserService{
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -20,6 +25,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public User createUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 

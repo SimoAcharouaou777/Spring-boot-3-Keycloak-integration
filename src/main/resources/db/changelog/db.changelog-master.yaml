@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: "1"
-      author: "YourName"
+      author: "SimoAcharouaou777"
       changes:
         - createTable:
             tableName: "users"
@@ -86,3 +86,14 @@ databaseChangeLog:
             referencedTableName: "roles"
             referencedColumnNames: "id"
             constraintName : "FK_user_roles_roles"
+  - changeSet:
+        id: "2"
+        author: "SimoAcharouaou777"
+        changes:
+          - addColumn:
+              tableName: "articles"
+              columns:
+                - column:
+                    name: "approved"
+                    type: "BOOLEAN"
+                    defaultValueBoolean: false

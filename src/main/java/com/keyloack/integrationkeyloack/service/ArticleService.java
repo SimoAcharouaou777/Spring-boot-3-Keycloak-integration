@@ -13,4 +13,6 @@ public interface ArticleService {
     Article createArticle(Article article);
 
     List<Article> getArticlesById(Long id);
+    List<Article> getUnapprovedArtiles();
+    Article approveArticle(Long articleId);
 }
