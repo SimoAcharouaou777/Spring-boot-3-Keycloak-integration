@@ -12,12 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authorization.method.AuthorizeReturnObject;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
 import java.util.Map;
 
 @RestController
@@ -56,7 +58,12 @@ public class AuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if(jwtUtil.isTokenValid(refreshToken, userDetails)){
-                String newAccessToken = jwtUtil.generateToken(username, userDetails.getAuthorities().toString());
+                Collection<SimpleGrantedAuthority> authorities = userDetails.getAuthorities()
+                        .stream()
+                        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
+                        .toList();
+
+                String newAccessToken = jwtUtil.generateToken(username, authorities);
                 return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
             }else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");

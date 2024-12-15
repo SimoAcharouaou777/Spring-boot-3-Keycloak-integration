@@ -11,11 +11,13 @@ import com.keyloack.integrationkeyloack.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -38,7 +40,12 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
         UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
-        String accessToken = jwtUtil.generateToken(userDetails.getUsername(), userDetails.getAuthorities().toString());
+        Collection<SimpleGrantedAuthority> authorities = userDetails.getAuthorities()
+                .stream()
+                .map(auth -> new SimpleGrantedAuthority(auth.getAuthority()))
+                .collect(Collectors.toList());
+
+        String accessToken = jwtUtil.generateToken(userDetails.getUsername(), authorities);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
 
         Map<String, String> tokens = new HashMap<>();
