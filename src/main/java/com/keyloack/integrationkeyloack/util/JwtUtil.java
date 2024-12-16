@@ -26,7 +26,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .setSubject(username)
-                .claim("roles", authorities)
+                .claim("roles", roles)
                 .setIssuer("custom")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_TIME))
@@ -61,14 +61,16 @@ public class JwtUtil {
 
     public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token){
         Claims claims = extractAllClaims(token);
-        Object roles =  claims.get("roles");
-
-        if(roles instanceof List){
-            return ((List<?>)roles).stream()
-                    .map(role -> new SimpleGrantedAuthority(role.toString()))
-                    .toList();
+        List<String> roles = claims.get("roles", List.class);
+//        return roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        if(roles == null || roles.isEmpty()){
+            System.out.println("No roles found in token");
+            return List.of();
         }
-        throw new IllegalArgumentException("Invalid roles format in token");
+
+        return roles.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
     }
 

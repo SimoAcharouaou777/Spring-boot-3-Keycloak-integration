@@ -1,11 +1,13 @@
 package com.keyloack.integrationkeyloack.config;
 
+import com.keyloack.integrationkeyloack.config.KeycloakRealmRoleConverter;
 import com.keyloack.integrationkeyloack.service.UserDetailsServiceImpl;
 import com.keyloack.integrationkeyloack.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +15,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,37 +27,34 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @Configuration
-@EnableMethodSecurity
+@EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtUtil jwtUtil;
-    private final UserDetailsServiceImpl userDetailsServiceImpl;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService; // Your custom user details service
 
-    public SecurityConfig(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsServiceImpl) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsServiceImpl = userDetailsServiceImpl;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/employee/**").hasAuthority("ROLE_EMPLOYEE")
-                        .requestMatchers("/user/**").hasAuthority("ROLE_USER")
+                        .requestMatchers("/auth/**").permitAll() // Publicly accessible
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "admin")
+                        .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE", "employee")
+                        .requestMatchers("/articles/**").hasAnyAuthority("ROLE_USER")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(customJwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .jwkSetUri("http://localhost:8080/realms/bankify/protocol/openid-connect/certs")
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                        )
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 );
+
         return http.build();
     }
 
@@ -69,32 +70,35 @@ public class SecurityConfig {
             @Override
             protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                     throws ServletException, IOException {
+
                 final String authHeader = request.getHeader("Authorization");
 
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
                     String token = authHeader.substring(7);
-                    if (isCustomToken(token)) {
+
+                    if (jwtUtil.isCustomToken(token)) {
                         try {
                             String username = jwtUtil.extractUsername(token);
-                            UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(username);
-                            if (jwtUtil.isTokenValid(token, userDetails)) {
-                                var authorities = jwtUtil.getAuthoritiesFromToken(token);
-                                var authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
-                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                            if (username != null) {
+                                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                                if (jwtUtil.isTokenValid(token, userDetails)) {
+                                    var authorities = jwtUtil.getAuthoritiesFromToken(token);
+                                    System.out.println(" Extracted Authorities: " + authorities);
+                                    var authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                                }
                             }
                         } catch (Exception e) {
                             System.out.println("Invalid custom JWT: " + e.getMessage());
                         }
                     }
                 }
-                filterChain.doFilter(request, response);
-            }
 
-            private boolean isCustomToken(String token) {
-                return jwtUtil.isCustomToken(token);
+                filterChain.doFilter(request, response);
             }
         };
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
