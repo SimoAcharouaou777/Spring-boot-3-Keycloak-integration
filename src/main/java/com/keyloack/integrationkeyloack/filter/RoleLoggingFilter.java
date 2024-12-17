@@ -17,15 +17,13 @@ public class RoleLoggingFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.isAuthenticated()) {
-            authentication.getAuthorities().forEach(authority ->
-                    System.out.println("Role: " + authority.getAuthority())
-            );
+        if (authentication != null) {
+            System.out.println("Authenticated user: " + authentication.getName());
+            authentication.getAuthorities().forEach(auth -> System.out.println("Authority: " + auth.getAuthority()));
         } else {
-            System.out.println("No authenticated user for this request: " + request.getRequestURI());
+            System.out.println("No authenticated user for this request");
         }
 
         filterChain.doFilter(request, response);

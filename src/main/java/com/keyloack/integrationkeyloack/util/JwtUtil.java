@@ -10,16 +10,15 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
     private final String SECRET_KEY = "cRfZWEWcam0rZfeiATUqsM7kJzCsKS0x7f4Yns5xcLQ=";
-    private final long ACCESS_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 10;
-    private final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30;
+    private final long ACCESS_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
+    private final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30; // 30 days
 
-    public String generateToken(String username, Collection<SimpleGrantedAuthority> authorities){
+    public String generateToken(String username, Collection<SimpleGrantedAuthority> authorities) {
         List<String> roles = authorities.stream()
                 .map(SimpleGrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
@@ -34,20 +33,59 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateRefreshToken(String username){
+    public String generateRefreshToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
+                .setIssuer("custom")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
                 .compact();
     }
-    public String extractUsername(String token) {
-        return extractClaims(token).getSubject();
+
+    public boolean isCustomToken(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            return "custom".equals(claims.getIssuer());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    public Claims extractClaims(String token) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+    public String extractUsername(String token) {
+        try {
+            String username = extractClaims(token).getSubject();
+            System.out.println("Extracted username: " + username);
+            return username;
+        } catch (Exception e) {
+            System.out.println("Failed to extract username: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            List<String> roles = claims.get("roles", List.class);
+            System.out.println("Extracted roles: " + roles);
+            return roles.stream()
+                    .map(role -> new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.out.println("Failed to extract authorities: " + e.getMessage());
+            return List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+        }
+    }
+
+    private Claims extractClaims(String token) {
+        try{
+            return Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to validate custom token : " + e.getMessage());
+        }
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -59,34 +97,4 @@ public class JwtUtil {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token){
-        Claims claims = extractAllClaims(token);
-        List<String> roles = claims.get("roles", List.class);
-//        return roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        if(roles == null || roles.isEmpty()){
-            System.out.println("No roles found in token");
-            return List.of();
-        }
-
-        return roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-    }
-
-    private Claims extractAllClaims(String token){
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    public boolean isCustomToken(String token) {
-        try {
-            Claims claims = extractAllClaims(token);
-            return claims.getIssuer() != null && claims.getIssuer().equals("custom");
-        } catch (Exception e) {
-            return false;
-        }
-    }
 }
