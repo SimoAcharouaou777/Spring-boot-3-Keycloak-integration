@@ -33,8 +33,6 @@ public class ArticleController {
     @PreAuthorize("hasAuthority('ROLE_USER')")
     public ResponseEntity<Article> createArticle(@RequestBody Article article , Authentication authentication) {
         String username = authentication.getName();
-        System.out.println("Authenticated user: "+ username);
-        System.out.println("Authorities: "+ authentication.getAuthorities());
         User user =  userServiceImpl.getUser(username);
         article.setAuthor(user);
         return ResponseEntity.ok(articleServiceImpl.createArticle(article));

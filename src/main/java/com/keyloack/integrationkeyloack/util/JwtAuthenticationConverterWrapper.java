@@ -11,28 +11,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * A Keycloak-specific converter that extracts realm-level roles from JWT claim "realm_access".
- */
 public class JwtAuthenticationConverterWrapper implements Converter<Jwt, AbstractAuthenticationToken> {
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        // Typically the Keycloak realm roles are stored under "realm_access.roles"
+        // Extract realm roles
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+        Collection<SimpleGrantedAuthority> authorities = List.of();
         if (realmAccess != null && realmAccess.containsKey("roles")) {
             List<String> roles = (List<String>) realmAccess.get("roles");
-
-            // Convert each role to a SimpleGrantedAuthority with the prefix "ROLE_"
-            Collection<SimpleGrantedAuthority> authorities = roles.stream()
+            authorities = roles.stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                     .collect(Collectors.toSet());
-
-            // principal (3rd param) is typically the subject
-            return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
         }
 
-        // If no realm_access, fallback to empty authorities but still produce an authentication token
-        return new JwtAuthenticationToken(jwt, List.of(), jwt.getSubject());
+        // Use "preferred_username" as principal
+        String keycloakUsername = jwt.getClaimAsString("preferred_username");
+        if (keycloakUsername == null || keycloakUsername.isBlank()) {
+            // fallback to the subject if needed
+            keycloakUsername = jwt.getSubject();
+        }
+
+        return new JwtAuthenticationToken(jwt, authorities, keycloakUsername);
     }
 }

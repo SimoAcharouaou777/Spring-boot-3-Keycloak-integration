@@ -15,15 +15,14 @@ import java.io.IOException;
  * Optional debugging filter to log roles for every request.
  * If you don’t need this, you can remove it or keep it in the chain.
  */
-@Component
+//@Component   // remove this if you don't want it auto-registered
 public class RoleLoggingFilter extends OncePerRequestFilter {
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             System.out.println("Authenticated user: " + authentication.getName());
             authentication.getAuthorities().forEach(auth ->

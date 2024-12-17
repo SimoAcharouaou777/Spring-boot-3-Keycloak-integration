@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;  // <-- Make sure to import this
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -21,36 +21,29 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)  // Modern annotation for method-level security
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final DelegatingJwtFilter delegatingJwtFilter;
 
+    // We inject DelegatingJwtFilter as a bean
     public SecurityConfig(@Lazy DelegatingJwtFilter delegatingJwtFilter) {
         this.delegatingJwtFilter = delegatingJwtFilter;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // The main differences from your original code:
-        // 1) Disable CSRF if you’re purely stateless
-        // 2) Add the DelegatingJwtFilter before UsernamePasswordAuthenticationFilter
-        // 3) Set sessionCreationPolicy(STATELESS)
-        // 4) Add explicit request matchers (like your friend’s code) for open endpoints vs. role-based
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Open endpoints
                         .requestMatchers("/auth/**").permitAll()
-                        // Role-based endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/employee/**").hasRole("EMPLOYEE")
-                        .requestMatchers("/articles/**").hasAnyRole("USER")
-                        // Everything else requires authentication
+                        .requestMatchers("/articles/**").hasRole("USER") // or hasAnyRole("USER","ADMIN"), etc.
                         .anyRequest().authenticated()
                 )
-                // Put your DelegatingJwtFilter in front of the UsernamePasswordAuthenticationFilter
+                // Register ONLY the DelegatingJwtFilter in the chain
                 .addFilterBefore(delegatingJwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -62,13 +55,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
     }
 
-    // Optional but nice to have: role hierarchy
-    // e.g. ROLE_ADMIN > ROLE_EMPLOYEE means an ADMIN is also recognized as an EMPLOYEE
+    // Optional: Role Hierarchy
     @Bean
     public RoleHierarchy roleHierarchy() {
         RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
@@ -76,11 +67,11 @@ public class SecurityConfig {
         return roleHierarchy;
     }
 
-    // Configure the JwtDecoder for Keycloak tokens.
+    // JwtDecoder for Keycloak tokens
     @Bean
     public JwtDecoder jwtDecoder() {
-        // Make sure this is correct Keycloak certs URL for your realm
-        return NimbusJwtDecoder.withJwkSetUri("http://localhost:8080/realms/bankify/protocol/openid-connect/certs")
+        return NimbusJwtDecoder
+                .withJwkSetUri("http://localhost:8080/realms/bankify/protocol/openid-connect/certs")
                 .build();
     }
 }
