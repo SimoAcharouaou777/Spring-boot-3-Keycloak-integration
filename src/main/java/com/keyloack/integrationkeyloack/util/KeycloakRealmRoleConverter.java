@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * If you also need direct usage of a converter for resource-level roles,
+ * you can incorporate this. Right now, JwtAuthenticationConverterWrapper
+ * does the realm roles logic inline, so this is optional.
+ */
 public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
     @Override

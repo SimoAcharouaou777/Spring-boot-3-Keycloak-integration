@@ -13,6 +13,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filter for handling your own custom JWT (issuer = "custom").
+ */
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
@@ -20,28 +23,34 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request.getHeader("Authorization");
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             try {
                 System.out.println("Processing custom token: " + token);
+
                 String username = jwtUtil.extractUsername(token);
                 var authorities = jwtUtil.getAuthoritiesFromToken(token);
 
                 System.out.println("Authenticated username: " + username);
                 System.out.println("Authorities: " + authorities);
 
-                var authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("Custom token set in SecurityContext" + SecurityContextHolder.getContext().getAuthentication().getName());
+
+                System.out.println("Custom token set in SecurityContext: "
+                        + SecurityContextHolder.getContext().getAuthentication().getName());
             } catch (Exception e) {
                 System.out.println("Custom token authentication failed: " + e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }
