@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH+EXTRA = "C:\\Program Files\\Docker\\Docker\\resources\\bin"
+        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
     }
 
     stages {
@@ -14,14 +14,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'chmod +x mvnw'
-                        sh './mvnw clean install -DskipTests'
-                    } else {
-                        bat 'mvnw.cmd clean install -DskipTests'
-                    }
-                }
+                bat 'chmod +x mvnw'
+                bat './mvnw clean install -DskipTests'
             }
         }
 
@@ -38,16 +32,9 @@ pipeline {
             }
         }
 
-
         stage('Unit Tests & Coverage') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh './mvnw test'
-                    } else {
-                        bat 'mvnw.cmd test'
-                    }
-                }
+                bat './mvnw test'
             }
             post {
                 always {
@@ -82,25 +69,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh "docker build -t myapp:latest ."
-                    } else {
-                        bat "docker build -t myapp:latest ."
-                    }
-                }
+                bat "docker build -t myapp:latest ."
             }
         }
 
         stage('Run Container') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
-                    } else {
-                        bat "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
-                    }
-                }
+                bat "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
             }
         }
     }
