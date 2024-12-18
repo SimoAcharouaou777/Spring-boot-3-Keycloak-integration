@@ -18,7 +18,12 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
-                    sh './mvnw sonar:sonar -Dsonar.projectKey=com.keyloack:integrationkeyloack -Dsonar.host.url=http://172.21.224.1:9000'
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh './mvnw sonar:sonar \
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
+                            -Dsonar.host.url=http://172.21.224.1:9000 \
+                            -Dsonar.login=$SONAR_TOKEN'
+                    }
                 }
             }
         }
@@ -38,7 +43,6 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    // waitForQualityGate requires SonarQube integration
                     timeout(time: 2, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
@@ -52,7 +56,7 @@ pipeline {
         stage('Manual Approval') {
             steps {
                 script {
-                    input(message: "Approve deployment?", submitter: "admin")
+                    input message: "Approve deployment?", submitter: "admin"
                 }
             }
         }
@@ -74,6 +78,5 @@ pipeline {
         always {
             echo 'Pipeline finished'
         }
-
     }
 }
