@@ -44,7 +44,7 @@ pipeline {
             steps {
                 script {
                     timeout(time: 2, unit: 'MINUTES') {
-                        withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
+                        withSonarQubeEnv('SonarQubeDevops') {
                             def qg = waitForQualityGate()
                             if (qg.status != 'OK') {
                                 error "Quality Gate failed: ${qg.status}"
@@ -54,6 +54,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Manual Approval') {
             steps {
