@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
+        PATH = "C:\\\\Program Files\\\\Docker\\\\Docker\\\\resources\\\\bin;${env.PATH}"
     }
 
     stages {
@@ -23,9 +23,9 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
                     withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
-                        bat '''mvnw.cmd sonar:sonar \
-                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
-                            -Dsonar.host.url=http://172.21.224.1:9000 \
+                        bat '''mvnw.cmd sonar:sonar ^
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack ^
+                            -Dsonar.host.url=http://172.21.224.1:9000 ^
                             -Dsonar.login=%SONAR_TOKEN%'''
                     }
                 }
@@ -69,6 +69,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                bat "docker --version" // Verify Docker works
                 bat "docker build -t myapp:latest ."
             }
         }
