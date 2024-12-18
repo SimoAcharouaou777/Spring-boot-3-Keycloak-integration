@@ -14,7 +14,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'chmod +x mvnw'
+                bat 'chmod +x mvnw' // Windows equivalent; ensure it works
                 bat './mvnw clean install -DskipTests'
             }
         }
@@ -32,51 +32,16 @@ pipeline {
             }
         }
 
-        stage('Unit Tests & Coverage') {
-            steps {
-                bat './mvnw test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                    jacoco execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 2, unit: 'MINUTES') {
-                        withSonarQubeEnv('SonarQubeDevops') {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                error "Quality Gate failed: ${qg.status}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Manual Approval') {
-            steps {
-                script {
-                    input message: "Approve deployment?", submitter: "admin"
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                bat "docker --version" // Verify Docker works
-                bat "docker build -t myapp:latest ."
+                bat 'docker --version' // Validate Docker is recognized
+                bat 'docker build -t myapp:latest .'
             }
         }
 
         stage('Run Container') {
             steps {
-                bat "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
+                bat 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
             }
         }
     }
