@@ -17,7 +17,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('MySonarQubeServer') {
+                withSonarQubeEnv('SonarQubeDevops') {
                     sh './mvnw sonar:sonar -Dsonar.projectKey=com.keyloack:integrationkeyloack'
                 }
             }
