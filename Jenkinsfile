@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"  // Correct PATH for Linux
+        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
     }
 
     stages {
@@ -14,7 +14,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'chmod +x mvnw'  // Use `sh` for Linux
+                sh 'chmod +x mvnw'
                 sh './mvnw clean install -DskipTests'
             }
         }
@@ -71,7 +71,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t myapp:latest .'  // Use `sh` for Linux
+                sh 'docker build -t myapp:latest .'
             }
         }
 
