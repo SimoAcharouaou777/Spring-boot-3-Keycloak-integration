@@ -29,23 +29,15 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
                     withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
-                        script {
-                            if (isUnix()) {
-                                sh './mvnw sonar:sonar \
-                                    -Dsonar.projectKey=com.keyloack:integrationkeyloack \
-                                    -Dsonar.host.url=http://172.21.224.1:9000 \
-                                    -Dsonar.login=$SONAR_TOKEN'
-                            } else {
-                                bat 'mvnw.cmd sonar:sonar ^
-                                    -Dsonar.projectKey=com.keyloack:integrationkeyloack ^
-                                    -Dsonar.host.url=http://172.21.224.1:9000 ^
-                                    -Dsonar.login=%SONAR_TOKEN%'
-                            }
-                        }
+                        bat '''mvnw.cmd sonar:sonar \
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
+                            -Dsonar.host.url=http://172.21.224.1:9000 \
+                            -Dsonar.login=%SONAR_TOKEN%'''
                     }
                 }
             }
         }
+
 
         stage('Unit Tests & Coverage') {
             steps {
