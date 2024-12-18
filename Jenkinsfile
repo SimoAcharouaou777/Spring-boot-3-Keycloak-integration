@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-            PATH = "C:/Program Files/Docker/Docker/resources/bin:C:/Windows/System32:${env.PATH}"
-        }
+        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Windows\\System32;${env.PATH}"
+    }
 
     stages {
         stage('Checkout') {
@@ -14,8 +14,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'chmod +x mvnw'
-                sh './mvnw clean install -DskipTests'
+                bat 'mvnw.cmd clean install -DskipTests'
             }
         }
 
@@ -23,10 +22,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
                     withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
-                        sh './mvnw sonar:sonar \
-                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
-                            -Dsonar.host.url=http://172.21.224.1:9000 \
-                            -Dsonar.login=$SONAR_TOKEN'
+                        bat '''
+                            mvnw.cmd sonar:sonar ^
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack ^
+                            -Dsonar.host.url=http://172.21.224.1:9000 ^
+                            -Dsonar.login=%SONAR_TOKEN%
+                        '''
                     }
                 }
             }
@@ -34,7 +35,7 @@ pipeline {
 
         stage('Unit Tests & Coverage') {
             steps {
-                sh './mvnw test'
+                bat 'mvnw.cmd test'
             }
             post {
                 always {
@@ -59,7 +60,6 @@ pipeline {
             }
         }
 
-
         stage('Manual Approval') {
             steps {
                 script {
@@ -70,13 +70,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t myapp:latest ."
+                bat 'docker build -t myapp:latest .'
             }
         }
 
         stage('Run Container') {
             steps {
-                sh "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
+                bat 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
             }
         }
     }
