@@ -1,5 +1,6 @@
 package com.keyloack.integrationkeyloack.filter;
 
+import com.keyloack.integrationkeyloack.repository.UserRepository;
 import com.keyloack.integrationkeyloack.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,12 +25,12 @@ public class DelegatingJwtFilter extends OncePerRequestFilter {
     private final JwtOAuth2Filter jwtOAuth2Filter;
 
     // We inject the dependencies needed for sub-filters: JwtUtil + JwtDecoder.
-    public DelegatingJwtFilter(JwtUtil jwtUtil, JwtDecoder jwtDecoder) {
+    public DelegatingJwtFilter(JwtUtil jwtUtil, JwtDecoder jwtDecoder, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
 
         // Manually create sub-filter instances (no @Component):
         this.jwtRequestFilter = new JwtRequestFilter(jwtUtil);
-        this.jwtOAuth2Filter = new JwtOAuth2Filter(jwtDecoder, jwtUtil);
+        this.jwtOAuth2Filter = new JwtOAuth2Filter(jwtDecoder, jwtUtil , userRepository);
     }
 
     @Override

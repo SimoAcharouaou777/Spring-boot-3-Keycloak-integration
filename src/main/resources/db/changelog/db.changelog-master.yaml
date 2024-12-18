@@ -97,3 +97,16 @@ databaseChangeLog:
                     name: "approved"
                     type: "BOOLEAN"
                     defaultValueBoolean: false
+  - changeSet:
+      id: "3"
+      author: "SimoAcharouaou777"
+      changes:
+        - addColumn:
+            tableName: "users"
+            columns:
+              - column:
+                  name: "keycloak_id"
+                  type: "VARCHAR(255)"
+                  constraints:
+                    nullable: true
+                    unique: true

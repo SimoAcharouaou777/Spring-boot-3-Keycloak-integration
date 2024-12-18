@@ -15,6 +15,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String keycloakId;
+
     @Column(unique = true , nullable = false)
     private String username;
 
@@ -56,6 +59,18 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getKeycloakId() {
+        return keycloakId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setKeycloakId(String keycloakId) {
+        this.keycloakId = keycloakId;
     }
 
 }
