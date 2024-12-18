@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Windows\\System32;${env.PATH}"
+        PATH = "/usr/bin:/usr/local/bin:${env.PATH}"  // Correct PATH for Linux
     }
 
     stages {
@@ -14,7 +14,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'mvnw.cmd clean install -DskipTests'
+                sh 'chmod +x mvnw'  // Use `sh` for Linux
+                sh './mvnw clean install -DskipTests'
             }
         }
 
@@ -22,12 +23,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
                     withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
-                        bat """
-                            mvnw.cmd sonar:sonar ^
-                            -Dsonar.projectKey=com.keyloack:integrationkeyloack ^
-                            -Dsonar.host.url=http://172.21.224.1:9000 ^
-                            -Dsonar.login=%SONAR_TOKEN%
-                        """
+                        sh '''
+                            ./mvnw sonar:sonar \
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
+                            -Dsonar.host.url=http://172.21.224.1:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                        '''
                     }
                 }
             }
@@ -35,7 +36,7 @@ pipeline {
 
         stage('Unit Tests & Coverage') {
             steps {
-                bat 'mvnw.cmd test'
+                sh './mvnw test'
             }
             post {
                 always {
@@ -70,13 +71,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t myapp:latest .'
+                sh 'docker build -t myapp:latest .'  // Use `sh` for Linux
             }
         }
 
         stage('Run Container') {
             steps {
-                bat 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
+                sh 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
             }
         }
     }
