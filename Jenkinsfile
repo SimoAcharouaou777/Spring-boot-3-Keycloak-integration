@@ -71,16 +71,6 @@ pipeline {
     }
 
     post {
-        success {
-            // Configure mail or slack plugin first, then:
-            // mail to: 'devteam@example.com',
-            //      subject: "Build Successful",
-            //     body: "The pipeline completed successfully!"
-        }
-        failure {
-        //    mail to: 'devteam@example.com',
-        //         subject: "Build Failed",
-        //         body: "The pipeline has failed. Check the logs for details."
-        }
+
     }
 }
