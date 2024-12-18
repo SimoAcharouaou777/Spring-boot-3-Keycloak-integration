@@ -44,9 +44,11 @@ pipeline {
             steps {
                 script {
                     timeout(time: 2, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Quality gate failed: ${qg.status}"
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                error "Quality Gate failed: ${qg.status}"
+                            }
                         }
                     }
                 }
