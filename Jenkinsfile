@@ -18,7 +18,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
-                    sh './mvnw sonar:sonar -Dsonar.projectKey=com.keyloack:integrationkeyloack'
+                    sh './mvnw sonar:sonar -Dsonar.projectKey=com.keyloack:integrationkeyloack -Dsonar.host.url=http://172.21.224.1:9000'
                 }
             }
         }
