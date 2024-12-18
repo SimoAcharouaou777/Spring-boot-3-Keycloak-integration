@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        PATH = "C:\\\\Program Files\\\\Docker\\\\Docker\\\\resources\\\\bin;${env.PATH}"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -14,8 +10,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'chmod +x mvnw' // Windows equivalent; ensure it works
-                bat './mvnw clean install -DskipTests'
+                sh 'chmod +x mvnw'
+                sh './mvnw clean install -DskipTests'
             }
         }
 
@@ -23,25 +19,60 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeDevops') {
                     withCredentials([string(credentialsId: 'sonar-token2', variable: 'SONAR_TOKEN')]) {
-                        bat '''mvnw.cmd sonar:sonar ^
-                            -Dsonar.projectKey=com.keyloack:integrationkeyloack ^
-                            -Dsonar.host.url=http://172.21.224.1:9000 ^
-                            -Dsonar.login=%SONAR_TOKEN%'''
+                        sh './mvnw sonar:sonar \
+                            -Dsonar.projectKey=com.keyloack:integrationkeyloack \
+                            -Dsonar.host.url=http://172.21.224.1:9000 \
+                            -Dsonar.login=$SONAR_TOKEN'
                     }
+                }
+            }
+        }
+
+        stage('Unit Tests & Coverage') {
+            steps {
+                sh './mvnw test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                    jacoco execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 2, unit: 'MINUTES') {
+                        withSonarQubeEnv('SonarQubeDevops') {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                error "Quality Gate failed: ${qg.status}"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Manual Approval') {
+            steps {
+                script {
+                    input message: "Approve deployment?", submitter: "admin"
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker --version' // Validate Docker is recognized
-                bat 'docker build -t myapp:latest .'
+                sh "docker build -t myapp:latest ."
             }
         }
 
         stage('Run Container') {
             steps {
-                bat 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
+                sh "docker run -d -p 8083:8083 --name myapp-container myapp:latest"
             }
         }
     }
