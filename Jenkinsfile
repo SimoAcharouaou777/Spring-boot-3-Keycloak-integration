@@ -83,8 +83,16 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Pipeline finished'
+        success {
+            emailext subject: 'SUCCESS: Job ${JOB_NAME} Build ${BUILD_NUMBER}',
+                     body: 'The job was successful. Check details at ${BUILD_URL}',
+                     to: 'your_email@gmail.com'
+        }
+        failure {
+            emailext subject: 'FAILED: Job ${JOB_NAME} Build ${BUILD_NUMBER}',
+                     body: 'The job has failed. Check details at ${BUILD_URL}',
+                     to: 'your_email@gmail.com'
         }
     }
+
 }
