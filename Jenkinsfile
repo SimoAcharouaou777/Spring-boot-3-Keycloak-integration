@@ -77,7 +77,7 @@ pipeline {
 
         stage('Run Container') {
             steps {
-                sh 'docker run -d -p 8083:8083 --name myapp-container myapp:latest'
+                sh 'docker run -d -p 8083:8081 --name myapp-container myapp:latest'
             }
         }
     }
