@@ -83,16 +83,16 @@ pipeline {
     }
 
     post {
-        success {
-            emailext subject: 'SUCCESS: Job ${JOB_NAME} Build ${BUILD_NUMBER}',
-                     body: 'The job was successful. Check details at ${BUILD_URL}',
-                     to: 'acharouaoumohamed@gmail.com'
+            success {
+                mail to: 'acharouaoumohamed@gmail.com',
+                     subject: "Pipeline Success - eBankify",
+                     body: "Le pipeline Jenkins s'est terminé avec succès !"
+            }
+            failure {
+                mail to: 'acharouaoumohamed@gmail.com',
+                     subject: "Pipeline Failure - eBankify",
+                     body: "Le pipeline Jenkins a échoué. Veuillez vérifier les logs."
+            }
         }
-        failure {
-            emailext subject: 'FAILED: Job ${JOB_NAME} Build ${BUILD_NUMBER}',
-                     body: 'The job has failed. Check details at ${BUILD_URL}',
-                     to: 'acharouaoumohamed@gmail.com'
-        }
-    }
 
 }
