@@ -15,7 +15,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 sh 'chmod +x mvnw'
-                sh './mvnw clean install' // Removed -DskipTests to run tests during build
+                sh './mvnw clean install'
             }
             post {
                 always {
@@ -43,7 +43,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 10, unit: 'MINUTES') { // Adjusted timeout as needed
+                    timeout(time: 6, unit: 'MINUTES') {
                         def qualityGate = waitForQualityGate()
                         if (qualityGate.status != 'OK') {
                             error "Quality Gate failed: ${qualityGate.status}"
