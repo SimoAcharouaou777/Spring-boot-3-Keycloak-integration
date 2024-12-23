@@ -12,10 +12,16 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build and Test') {
             steps {
                 sh 'chmod +x mvnw'
-                sh './mvnw clean install -DskipTests'
+                sh './mvnw clean install' // Removed -DskipTests to run tests during build
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                    jacoco execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'
+                }
             }
         }
 
@@ -34,27 +40,13 @@ pipeline {
             }
         }
 
-        stage('Unit Tests & Coverage') {
-            steps {
-                sh './mvnw test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                    jacoco execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'
-                }
-            }
-        }
-
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        withSonarQubeEnv('SonarQubeDevops') {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                error "Quality Gate failed: ${qg.status}"
-                            }
+                    timeout(time: 10, unit: 'MINUTES') { // Adjusted timeout as needed
+                        def qualityGate = waitForQualityGate()
+                        if (qualityGate.status != 'OK') {
+                            error "Quality Gate failed: ${qualityGate.status}"
                         }
                     }
                 }
@@ -83,16 +75,15 @@ pipeline {
     }
 
     post {
-            success {
-                mail to: 'acharouaoumohamed@gmail.com',
-                     subject: "Pipeline Success - eBankify",
-                     body: "Le pipeline Jenkins s'est terminé avec succès !"
-            }
-            failure {
-                mail to: 'acharouaoumohamed@gmail.com',
-                     subject: "Pipeline Failure - eBankify",
-                     body: "Le pipeline Jenkins a échoué. Veuillez vérifier les logs."
-            }
+        success {
+            mail to: 'acharouaoumohamed@gmail.com',
+                 subject: "Pipeline Success - eBankify",
+                 body: "Le pipeline Jenkins s'est terminé avec succès !"
         }
-
+        failure {
+            mail to: 'acharouaoumohamed@gmail.com',
+                 subject: "Pipeline Failure - eBankify",
+                 body: "Le pipeline Jenkins a échoué. Veuillez vérifier les logs."
+        }
+    }
 }
